@@ -5,7 +5,6 @@ const { MongoClient } = require('mongodb');
 const bodyParser = require('body-parser');
 const conectarDB = require('./db');
 const app = express();
-const port = 3000;
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -179,6 +178,4 @@ app.post('/edit', (req, res) => {
   console.log(`\nid:${id}\nname:${name}\nprice:${price}\nnubers:${numbers}\ndescripcion:${descripcion}\n`);
 });
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`);
-});
+app.listen(3000, () => console.log("Server ready on port 3000."));
