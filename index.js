@@ -164,7 +164,7 @@ function imgsEdit(id, imgs) {
           fs.unlinkSync('./public/ProductOptimize/' + item);
         });
       }
-  
+
       resolve(state);
     } catch (e) {
       resolve(imgs);
@@ -198,7 +198,7 @@ function edit({ id, file, title, price, category, numbers, descripcion }) {
       resolve();
       // }
     } catch (e) {
-   
+
       reject(e);
     }
   });
@@ -262,10 +262,17 @@ app.get("/search/:title/:category", async (req, res) => {
   if (category != 'Todo') {
     find0.category = category;
   }
-  var document = await client.db('Server').collection('Register').find(find0, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, category: 1 } }).sort({ createdAt: -1 }).toArray();
-  document = document.map((item) => { item.file = item.file[0]; return item; });
-
-  res.json(document);
+  var document = await client.db('Server').collection('Register').find(find0, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, price: 1, numbers: 1, category: 1 } }).sort({ createdAt: -1 }).toArray();
+  for (let index = 0; index < document.length; index++) {
+    const file = document[index].file[0];
+    fileExists = await fs.existsSync('./public/ProductOptimize/' + file);
+    if (file != undefined && fileExists == false) {
+      document[index].file = [];
+    }
+    document[index].file = document[index].file[0];
+  }
+  console.log(document)
+  res.json((document[0] == undefined) ? [null] : document);
 });
 
 // app.post("/searchC", (req, res) => {
