@@ -1,6 +1,6 @@
 const { MongoClient } = require('mongodb');
 
-const client = new MongoClient(process.env.MONGO_URI);
+const client = new MongoClient('mongodb+srv://456olguinwer:3ph0seGYJsbKM0Op@cluster0.xuc1p.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0');
 
 async function conectarDB() {
   try {

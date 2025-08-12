@@ -295,6 +295,20 @@ app.get("/search/:title/:category", async (req, res) => {
 
 
 
+app.post('/register', upload, (req, res) => {
+  const item = req.body;
+  const file = req.files.map((file) => {
+    sharp(`./public/Product/${file.filename}`)                     // Imagen original
+      .resize(700, 500)                    // Redimensionar a 800x600
+      .jpeg({ quality: 70 })
+      .toFile(`./public/ProductOptimize/${file.filename}`)               // Guardar como output.jpg
+      .catch(err => console.error('Error:', err)); return file.filename;
+  });
+  insertItem(item, file).then((id) => { res.json(id) }).catch();
+});
+
+
+
 app.post('/edit', upload, (req, res) => {
 
   const { id, imgs, title, price, category, numbers, descripcion } = req.body;
@@ -362,6 +376,6 @@ app.get('/upFile/:id', (req, res) => {
 // });
 
 app.use('/Render', express.static("./public/Files"));
-app.use('/Product', express.static("./public/product"));
+app.use('/Product', express.static("./public/Product"));
 app.use('/ProductOptimize', express.static("./public/ProductOptimize"));
 app.listen(3000, () => console.log("Server ready on port 3000."));
