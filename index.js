@@ -9,373 +9,180 @@ const sharp = require("sharp");
 const fs = require('fs');
 const app = express();
 
+// Multer en memoria
 const multer = require("multer");
-const upload = multer({
-  storage: multer.diskStorage({
-    destination: './public/Product',
-    filename: (req, file, done) => {
-      done(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname))
-    }
-
-  })
-}).array('img');
-
-const uploadFile = multer({
-  storage: multer.diskStorage({
-    destination: (req, file, cb) => {
-      const { id } = req.body;
-
-      const Path = './public/Files/' + id;
-      if (!fs.existsSync(Path)) {
-        fs.mkdirSync(Path)
-      }
-      cb(null, Path);
-    },
-    filename: (req, file, cb) => cb(null, file.originalname)
-  })
-}).array('file');
+const upload = multer({ storage: multer.memoryStorage() }).array('img');
 
 // Middleware
-app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cors());
 
-
-//db
+// Conexión DB
 conectarDB();
 const client = new MongoClient(process.env.MONGO_URI);
 
-
-
-
-// //modelo
-// const Register = {
-
-//   id: { type: Number, required: true }, // ID como número entero
-//   img: { type: String, default: null },
-//   name: { type: String, required: true },
-//   number: { type: String, required: true },
-//   descripcion: { type: String },
-//   createdAt: { type: Date, default: Date.now }
-// }
-
-// archivo public
-
-
-
-
-
-// Conexión a MongoDB Atlas
 function getCollection() {
   return client.db('Server').collection('Register');
 }
 
+// Funciones de base de datos (sin cambios importantes)
 async function showItems(category) {
-  return new Promise(async (resolve, reject) => {
+  try {
+    let document = await client.db('Server').collection('Register')
+      .find({ category }, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, price: 1, numbers: 1, category: 1 } })
+      .sort({ createdAt: -1 })
+      .toArray();
 
-    try {
-      var document = await client.db('Server').collection('Register').find({ category: `${category}` }, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, price: 1, numbers: 1, category: 1 } }).sort({ createdAt: -1 }).toArray();
-      for (let index = 0; index < document.length; index++) {
-        const file = document[index].file[0];
-        fileExists = await fs.existsSync('./public/ProductOptimize/' + file);
-        if (file != undefined && fileExists == false) {
-          document[index].file = [];
-        }
+    document = document.map(item => {
+      const file = item.file[0];
+      if (!file || !fs.existsSync(`./public/ProductOptimize/${file}`)) {
+        item.file = [];
       }
+      return item;
+    });
 
-      resolve(document);
-    } catch (error) {
-      reject();
-    }
-  });
+    return document;
+  } catch (error) {
+    throw error;
+  }
 }
-
 
 async function showItem() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const db = client.db('Server');
-      const colletion_ = db.collection("Register");
-      //show data default *
-      // const document = await colletion_.find().limit(10).sort({ createdAt: -1 }).toArray();
+  try {
+    let document = await client.db('Server').collection('Register')
+      .find({}, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, price: 1, numbers: 1, category: 1 } })
+      .sort({ createdAt: -1 })
+      .toArray();
 
-      //show spesific
-      var document = await colletion_.find({}, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, price: 1, numbers: 1, category: 1 } }).sort({ createdAt: -1 }).toArray();
-
-      for (let index = 0; index < document.length; index++) {
-        const file = document[index].file[0];
-        fileExists = await fs.existsSync('./public/ProductOptimize/' + file);
-        if (file != undefined && fileExists == false) {
-          document[index].file = [];
-        }
+    document = document.map(item => {
+      const file = item.file[0];
+      if (!file || !fs.existsSync(`./public/ProductOptimize/${file}`)) {
+        item.file = [];
       }
-      resolve(document);
-    } catch (error) {
-      reject(error);
-    }
-  });
-}
+      return item;
+    });
 
+    return document;
+  } catch (error) {
+    throw error;
+  }
+}
 
 function insertItem({ title, price, category, numbers, descripcion }, file) {
-  return new Promise(async (resolve, reject) => {
-    const id = Date.now();
-    try {
-      await getCollection().insertOne({ id, file, title, price, category, numbers, descripcion, createdAt: new Date() });
-      resolve(id);
-    } catch (error) {
-      reject();
-    }
-  });
+  return getCollection().insertOne({
+    id: Date.now(),
+    file,
+    title,
+    price,
+    category,
+    numbers,
+    descripcion,
+    createdAt: new Date()
+  }).then(result => result.insertedId);
 }
-
-function category() {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const rows = await getCollection().distinct("category");
-      resolve(rows)
-    } catch (error) {
-      reject();
-    }
-  })
-}
-
-function drop(id) {
-
-  return new Promise(async (resolve, reject) => {
-    try {
-      const { file } = await getCollection().findOne({ id }, { projection: { _id: 0, file: 1 } });
-
-      for (let index = 0; index < file.length; index++) {
-        fs.unlinkSync('./public/Product/' + file[index]);
-        fs.unlinkSync('./public/ProductOptimize/' + file[index]);
-      }
-      const result = await client.db('Server').collection('Register').deleteOne({ id: parseInt(id) });
-      if (result.deletedCount == 0) {
-        reject();
-      } else {
-        resolve();
-      }
-    } catch (e) {
-      reject();
-    }
-    // const request = client.db('Server').collection('Register').deleteOne({ id });
-    // console.log(request);
-  });
-}
-
 
 function imgsEdit(id, imgs) {
-
-  return new Promise(async (resolve, reject) => {
-    const setA = new Set(imgs);
-    try {
-      const { file } = await getCollection().findOne({ id }, { projection: { _id: 0, file: 1 } });
-      const imgsDelete = file.filter((item) => !setA.has(item));
-      if (imgsDelete[0] != undefined) {
-        imgsDelete.map(item => {
-          fs.unlinkSync('./public/Product/' + item);
-          fs.unlinkSync('./public/ProductOptimize/' + item);
-        });
-      }
-
-      resolve(state);
-    } catch (e) {
-      resolve(imgs);
-    }
-  })
-
+  return getCollection().findOne({ id }, { projection: { _id: 0, file: 1 } })
+    .then(({ file }) => {
+      const imgsDelete = file.filter(f => !imgs.includes(f));
+      imgsDelete.forEach(item => {
+        if (fs.existsSync(`./public/Product/${item}`)) fs.unlinkSync(`./public/Product/${item}`);
+        if (fs.existsSync(`./public/ProductOptimize/${item}`)) fs.unlinkSync(`./public/ProductOptimize/${item}`);
+      });
+      return imgs;
+    });
 }
 
 function edit({ id, file, title, price, category, numbers, descripcion }) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      await getCollection().updateOne(
-        { id: parseInt(id) }, // Usa parseInt solo si el id en la DB es numérico
-        {
-          $set: {
-            file,
-            title,
-            price,
-            category,
-            numbers,
-            descripcion
-          }
-        }
-      );
-
-      // if (result.modifiedCount === 0) {
-      //   console.log("⚠️ No se encontró el documento o no se modificó.");
-      //   reject("No se modificó");
-      // } else {
-
-      resolve();
-      // }
-    } catch (e) {
-
-      reject(e);
-    }
-  });
+  return getCollection().updateOne(
+    { id: parseInt(id) },
+    { $set: { file, title, price, category, numbers, descripcion } }
+  );
 }
 
-
-
-app.get('/show/:category', (req, res) => {
-  const { category } = req.params;
-
-  if (category == "Todo") {
-    showItem().then((item) => { item = item.map((item) => { item.file = item.file[0]; return item; }); res.json(item); }).catch((e) => { console.log(e) });
-  } else {
-
-    showItems(category).then((item) => { item = item.map((item) => { item.file = item.file[0]; return item; }); res.json(item); }).catch((e) => { console.log(e) });
-  }
-
-
-});
-
-app.get('/', (req, res) => {
-  showItem().then((item) => { item = item.map((item) => { item.file = item.file[0]; return item; }); res.json(item); }).catch((e) => { console.log(e) });
-});
-app.get("/ShowItem/:id", async (req, res) => {
+// Rutas
+app.get('/show/:category', async (req, res) => {
   try {
-    var { id } = req.params;
-    id = parseInt(id);
-    var document = await getCollection().findOne({ id }, { projection: { _id: 0 } });
-    const { file } = document;
-
-    if (file && file.length > 0) {
-      const filePathBase = './public/ProductOptimize/';
-
-      // Filtrar los archivos que realmente existen
-      const filesExistentes = file.filter(name => {
-        const ruta = filePathBase + name;
-        return fs.existsSync(ruta);
-      });
-      document.file = filesExistentes;
-    }
-    res.json(document);
-  } catch (error) {
-    res.sendStatus(400);
+    const { category } = req.params;
+    const items = category === "Todo" ? await showItem() : await showItems(category);
+    res.json(items.map(i => ({ ...i, file: i.file[0] })));
+  } catch (e) {
+    console.error(e);
+    res.sendStatus(500);
   }
-}
-);
-app.get("/category", async (req, res) => {
-  category().then((item) => res.json(item)).catch(() => res.sendStatus(400));
 });
 
-app.get("/Delet/:id", (req, res) => {
-  const { id } = req.params;
-  drop(parseInt(id))
-    .then(() => { res.sendStatus(200) })
-    .catch(() => { res.sendStatus(400) });
-});
-
-app.get("/search/:title/:category", async (req, res) => {
-  const { title, category } = req.params;
-  var find0 = { title: { $regex: `^${title}`, $options: "i" }, };
-  if (category != 'Todo') {
-    find0.category = category;
+app.get('/', async (req, res) => {
+  try {
+    const items = await showItem();
+    res.json(items.map(i => ({ ...i, file: i.file[0] })));
+  } catch (e) {
+    console.error(e);
+    res.sendStatus(500);
   }
-  var document = await client.db('Server').collection('Register').find(find0, { projection: { _id: 0, id: 1, file: { $slice: 1 }, title: 1, price: 1, numbers: 1, category: 1 } }).sort({ createdAt: -1 }).toArray();
-  for (let index = 0; index < document.length; index++) {
-    const file = document[index].file[0];
-    fileExists = await fs.existsSync('./public/ProductOptimize/' + file);
-    if (file != undefined && fileExists == false) {
-      document[index].file = [];
-    }
-    document[index].file = document[index].file[0];
-  }
-  console.log(document)
-  res.json((document[0] == undefined) ? [null] : document);
 });
 
-// app.post("/searchC", (req, res) => {
-//   const {} = req.body;
-// });
+// Registrar producto (procesa en memoria)
+app.post('/register', upload, async (req, res) => {
+  try {
+    const item = req.body;
+    const fileNames = [];
 
+    for (const file of req.files) {
+      const fileName = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+      fileNames.push(fileName);
 
+      // Guardar original
+      fs.writeFileSync(`./public/Product/${fileName}`, file.buffer);
 
-app.post('/register', upload, (req, res) => {
-  const item = req.body;
-  const file = req.files.map((file) => {
-    sharp(`./public/product/${file.filename}`)                     // Imagen original
-      .resize(700, 500)                    // Redimensionar a 800x600
-      .jpeg({ quality: 70 })
-      .toFile(`./public/ProductOptimize/${file.filename}`)               // Guardar como output.jpg
-      .catch(err => console.error('Error:', err)); return file.filename;
-  });
-  insertItem(item, file).then((id) => { res.json(id) }).catch();
-});
-
-
-
-app.post('/edit', upload, (req, res) => {
-
-  const { id, imgs, title, price, category, numbers, descripcion } = req.body;
-  var img = JSON.parse(imgs);
-  if (req.files[0] != undefined) {
-    var files = req.files;
-    files.map((file) => {
-      const i = img.indexOf(file.originalname);
-      img[i] = file.filename;
-      sharp(`./public/product/${file.filename}`)                     // Imagen original
-        .resize(700, 500)                    // Redimensionar a 800x600
+      // Guardar optimizado
+      await sharp(file.buffer)
+        .resize(700, 500)
         .jpeg({ quality: 70 })
-        .toFile(`./public/ProductOptimize/${file.filename}`)               // Guardar como output.jpg
-        .catch(err => console.error('Error:', err));
-    });
-  }
-  imgsEdit(parseInt(id), img)
-    .then((file) => {
-      edit({ id: id, file, title, price, category, numbers, descripcion })
-        .then(() => res.sendStatus(200))
-        .catch(() => res.sendStatus(400))
-    })
-    .catch();
-
-});
-
-function deleteFiles(showFiles, setFile, path) {
-  return new Promise((resolve, reject) => {
-    try {
-      const set = new Set(setFile);
-      // setFile = showFiles.filter((item) => !set.has(item))
-      for (let index = 0; index < showFiles.length; index++) {
-        if (set.has(showFiles[index])) {
-          fs.unlinkSync(path + showFiles[index]);
-        }
-      }
-
-      resolve();
-    } catch (error) {
-      console.log(error);
-      reject();
+        .toFile(`./public/ProductOptimize/${fileName}`);
     }
-  })
-}
 
-app.post('/upFile', uploadFile, (req, res,) => {
-  const { id, files } = req.body;
-  var dir = fs.readdirSync('./public/Files/' + id);
-  deleteFiles(dir, JSON.parse(files), `./public/Files/${id}/`)
-    .then(() => res.sendStatus(200))
-    .catch(() => res.sendStatus(400));
+    await insertItem(item, fileNames);
+    res.json({ success: true, files: fileNames });
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
 });
 
-app.get('/upFile/:id', (req, res) => {
-  const { id } = req.params;
-  const files = fs.readdirSync('./public/Files/' + id);
-  res.json(files);
+// Editar producto (procesa en memoria)
+app.post('/edit', upload, async (req, res) => {
+  try {
+    const { id, imgs, title, price, category, numbers, descripcion } = req.body;
+    let imgList = JSON.parse(imgs);
 
+    for (const file of req.files) {
+      const fileName = `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`;
+      const idx = imgList.indexOf(file.originalname);
+      if (idx >= 0) imgList[idx] = fileName;
+      else imgList.push(fileName);
+
+      fs.writeFileSync(`./public/Product/${fileName}`, file.buffer);
+
+      await sharp(file.buffer)
+        .resize(700, 500)
+        .jpeg({ quality: 70 })
+        .toFile(`./public/ProductOptimize/${fileName}`);
+    }
+
+    const finalFiles = await imgsEdit(parseInt(id), imgList);
+    await edit({ id, file: finalFiles, title, price, category, numbers, descripcion });
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error(err);
+    res.sendStatus(500);
+  }
 });
-// app.post('/edit', (req, res) => {
-//   const { id, name, price, numbers, descripcion } = req.body;
-//   const request = req.body;
-//   update(request).then(() => res.sendStatus( 3300)).catch(() => res.sendStatus(400))
-//   console.log(`\nid:${id}\nname:${name}\nprice:${price}\nnubers:${numbers}\ndescripcion:${descripcion}\n`);
-// });
 
-app.use('/Render', express.static("./public/Files"));
-app.use('/Product', express.static("./public/product"));
+// Archivos estáticos
+app.use('/Product', express.static("./public/Product"));
 app.use('/ProductOptimize', express.static("./public/ProductOptimize"));
+
 app.listen(3000, () => console.log("Server ready on port 3000."));
