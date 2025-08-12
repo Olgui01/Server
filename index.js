@@ -20,6 +20,20 @@ const upload = multer({
   })
 }).array('img');
 
+const uploadFile = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      const { id } = req.body;
+
+      const Path = './public/Files/' + id;
+      if (!fs.existsSync(Path)) {
+        fs.mkdirSync(Path)
+      }
+      cb(null, Path);
+    },
+    filename: (req, file, cb) => cb(null, file.originalname)
+  })
+}).array('file');
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }))
@@ -320,14 +334,48 @@ app.post('/edit', upload, (req, res) => {
     .catch();
 
 });
+
+function deleteFiles(showFiles, setFile, path) {
+  return new Promise((resolve, reject) => {
+    try {
+      const set = new Set(setFile);
+      // setFile = showFiles.filter((item) => !set.has(item))
+      for (let index = 0; index < showFiles.length; index++) {
+        if (set.has(showFiles[index])) {
+          fs.unlinkSync(path + showFiles[index]);
+        }
+      }
+
+      resolve();
+    } catch (error) {
+      console.log(error);
+      reject();
+    }
+  })
+}
+
+app.post('/upFile', uploadFile, (req, res,) => {
+  const { id, files } = req.body;
+  var dir = fs.readdirSync('./public/Files/' + id);
+  deleteFiles(dir, JSON.parse(files), `./public/Files/${id}/`)
+    .then(() => res.sendStatus(200))
+    .catch(() => res.sendStatus(400));
+});
+
+app.get('/upFile/:id', (req, res) => {
+  const { id } = req.params;
+  const files = fs.readdirSync('./public/Files/' + id);
+  res.json(files);
+
+});
 // app.post('/edit', (req, res) => {
 //   const { id, name, price, numbers, descripcion } = req.body;
 //   const request = req.body;
-//   update(request).then(() => res.sendStatus(200)).catch(() => res.sendStatus(400))
+//   update(request).then(() => res.sendStatus( 3300)).catch(() => res.sendStatus(400))
 //   console.log(`\nid:${id}\nname:${name}\nprice:${price}\nnubers:${numbers}\ndescripcion:${descripcion}\n`);
 // });
 
-
+app.use('/Render', express.static("./public/Files"));
 app.use('/Product', express.static("./public/product"));
 app.use('/ProductOptimize', express.static("./public/ProductOptimize"));
 app.listen(3000, () => console.log("Server ready on port 3000."));
