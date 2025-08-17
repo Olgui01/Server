@@ -166,7 +166,7 @@ function drop(id) {
 
 
 function imgsEdit(id, imgs) {
-console.log(imgs);
+  console.log(imgs);
   return new Promise(async (resolve, reject) => {
     const setA = new Set(imgs);
     try {
@@ -310,35 +310,18 @@ app.post('/register', upload, (req, res) => {
 
 
 app.post('/edit', upload, (req, res) => {
-  const { id, imgs, title, price, category, numbers, descripcion } = req.body;
-  console.log('data\n\n',req.files);
-  console.log('so is i mg \n\n',imgs);
-  var img = JSON.parse(imgs);
+  // const { id, imgs, title, price, category, numbers, descripcion } = req.body;
+  console.log('orryde');
+  console.log(req.files);
   if (req.files[0] != undefined) {
-    files.map((file) => {
-      const i = img.indexOf(file.originalname);
-      img[i] = file.filename;
+    req.files.map((file) => {
       console.log('Intentando procesar:', `./public/Product/${file.filename}`);
-fs.access(inputPath, fs.constants.F_OK, (err) => {
-  console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
-});
-
-      sharp(`./public/Product/${file.filename}`)                     // Imagen original
-        .resize(800, 600)                    // Redimensionar a 800x600
-        .jpeg({ quality: 70 })
-        .toFile(`./public/ProductOptimize/${file.filename}`)               // Guardar como output.jpg
-        .catch(err => console.error('Error:', err));
+      fs.access(`./public/Product/${file.filename}`, fs.constants.F_OK, (err) => {
+        console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
+      });
     });
   }
-
-  imgsEdit(parseInt(id), img)
-    .then((file) => {
-      edit({ id: id, file, title, price, category, numbers, descripcion })
-        .then(() => res.sendStatus(200))
-        .catch(() => res.sendStatus(400))
-    })
-    .catch();
-
+  res.sendStatus(200);
 });
 
 function deleteFiles(showFiles, setFile, path) {
