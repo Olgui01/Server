@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>MacBook Air 13" — M4 · Sky Blue</title>
+    <style>
+        /* Reset y base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html,
+        body {
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+            color: #111;
+            background: #f5f6f8;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* Contenedor principal */
+        .wrap {
+            max-width: 1200px;
+            margin: 48px auto;
+            padding: 0 24px;
+        }
+
+        /* Hero estilo Apple */
+        .hero {
+            background: linear-gradient(180deg, rgba(245, 246, 248, 1) 0%, rgba(250, 250, 251, 1) 100%);
+            border-radius: 18px;
+            padding: 64px 48px;
+            display: grid;
+            grid-template-columns: 1fr 560px;
+            gap: 48px;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(15, 20, 25, 0.04);
+            overflow: hidden;
+        }
+
+        .hero-left {
+            padding-right: 20px;
+        }
+
+        .eyebrow {
+            color: #6b7280;
+            font-size: 13px;
+            letter-spacing: 0.08em;
+            margin-bottom: 14px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 44px;
+            line-height: 1.02;
+            margin-bottom: 12px;
+            font-weight: 600;
+            color: #0b1220;
+        }
+
+        p.lead {
+            color: #374151;
+            font-size: 17px;
+            margin-bottom: 22px;
+        }
+
+        .specs {
+            display: flex;
+            gap: 14px;
+            margin-top: 18px;
+            flex-wrap: wrap;
+        }
+
+        .spec-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 14px;
+            min-width: 170px;
+            box-shadow: 0 4px 14px rgba(12, 18, 30, 0.06);
+            font-size: 14px;
+        }
+
+        .spec-card b {
+            display: block;
+            font-size: 15px;
+            margin-bottom: 6px;
+            color: #111827;
+        }
+
+        .cta-row {
+            margin-top: 28px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: black;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-weight: 600;
+            box-shadow: 0 6px 18px rgba(2, 6, 23, 0.18);
+            transition: transform .14s ease, box-shadow .14s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 28px rgba(2, 6, 23, 0.22);
+            cursor: pointer;
+        }
+
+        .btn-ghost {
+            border-radius: 10px;
+            padding: 10px 14px;
+            background: transparent;
+            border: 1px solid #e6e8eb;
+            color: #0b1220;
+        }
+
+        /* Carrusel / imágenes a la derecha */
+        .hero-right {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            height: 420px;
+        }
+
+        .carousel {
+            width: 520px;
+            height: 360px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: linear-gradient(180deg, #eef2f4, #ffffff);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 18px 60px rgba(11, 20, 30, 0.08);
+        }
+
+        .carousel img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transform-origin: center;
+        }
+
+        .dots {
+            position: absolute;
+            left: 14px;
+            bottom: 12px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            cursor: pointer;
+        }
+
+        .dot.active {
+            background: white;
+            box-shadow: 0 2px 6px rgba(2, 6, 23, 0.12);
+        }
+
+        /* Secciones (scroll reveal) */
+        section {
+            margin-top: 48px;
+            padding: 64px 0;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 28px;
+            align-items: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 8px 28px rgba(11, 20, 30, 0.04);
+            opacity: 0;
+            transform: translateY(18px);
+            transition: opacity .6s ease, transform .6s cubic-bezier(.22, .9, .3, 1);
+        }
+
+        .card.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        /* Specs table */
+        .spec-list {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .spec-item {
+            min-width: 210px;
+            background: #fafbfc;
+            padding: 12px 14px;
+            border-radius: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width:1000px) {
+            .hero {
+                grid-template-columns: 1fr;
+                padding: 36px;
+                gap: 22px;
+                height: auto;
+            }
+
+            .hero-right {
+                height: 360px;
+            }
+
+            .carousel {
+                width: 100%;
+                height: 320px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .wrap {
+                padding: 0 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrap">
+        <header class="hero" role="banner">
+            <div class="hero-left">
+                <div class="eyebrow">Nuevo — Chip Apple M4</div>
+                <h1>MacBook Air 13" — M4 · Sky Blue</h1>
+                <p class="lead">
+                    M4 ofrece rendimiento y eficiencia para trabajo diario y tareas creativas. Edita fotos, trabaja en
+                    video 4K y ejecuta múltiples apps sin esfuerzo.
+                </p>
+
+                <div class="specs">
+                    <div class="spec-card"><b>Hasta 32GB</b>Memoria unificada</div>
+                    <div class="spec-card"><b>Hasta 2TB</b>Almacenamiento SSD</div>
+                    <div class="spec-card"><b>Soporta 2</b>Pantallas externas</div>
+                </div>
+
+                <div class="cta-row">
+              
+                    <a class="btn-ghost" href="#specs">Ver especificaciones</a>
+                </div>
+            </div>
+
+            <div class="hero-right">
+                <div class="carousel" id="carousel">
+                    <!-- Rutas de imagen: están en /mnt/data según tu entorno -->
+                    <img data-src="mba13-skyblue-witb-202503.jpg" alt="MacBook Air - exterior" />
+                    <img data-src="mba13-m4-skyblue-gallery4-202503.jpg" alt="MacBook Air - close ports" />
+                    <img data-src="mba13-m4-skyblue-gallery2-202503%20(1).jpg" alt="MacBook Air - teclado" />
+                    <div class="dots" id="dots"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sección de especificaciones -->
+        <section id="specs">
+            <div class="grid">
+                <div class="card reveal">
+                    <h3>Memoria unificada</h3>
+                    <p>La memoria unificada permite compartir datos entre CPU, GPU y Neural Engine con gran eficiencia.
+                    </p>
+                    <div class="spec-list">
+                        <div class="spec-item"><b>Rendimiento</b>
+                            <div>Ágil en multitarea</div>
+                        </div>
+                        <div class="spec-item"><b>AI</b>
+                            <div>Neural Engine optimizado</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card reveal">
+                    <h3>Almacenamiento SSD</h3>
+                    <p>Arranque, apertura de apps y manejo de librerías con velocidades muy rápidas.</p>
+                    <div class="spec-list">
+                        <div class="spec-item"><b>Capacidad</b>
+                            <div>Hasta 2TB</div>
+                        </div>
+                        <div class="spec-item"><b>Velocidad</b>
+                            <div>Excelente I/O</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card reveal">
+                    <h3>Conectividad</h3>
+                    <p>Puertos USB-C/Thunderbolt y MagSafe para carga segura y rápida.</p>
+                </div>
+
+                <div class="card reveal">
+                    <h3>Qué incluye la caja</h3>
+                    <ul style="margin-top:8px; line-height:1.6;">
+                        <li>MacBook Air 13" — Sky Blue</li>
+                        <li>USB-C a MagSafe (2 m) — Sky Blue</li>
+                        <li>Adaptador de corriente</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="card center reveal">
+                <h3>¿Tienes preguntas?</h3>
+                <p class="lead">Habla con un especialista para ayudarte a elegir la configuración ideal.</p>
+                <div style="margin-top:16px;">
+    
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // ---- Carrusel simple con fade y dots ----
+        (function () {
+            const carousel = document.getElementById('carousel');
+            const imgs = Array.from(carousel.querySelectorAll('img'));
+            const dots = document.getElementById('dots');
+            let index = 0;
+            let interval = null;
+
+            // Preload and set initial styles
+            imgs.forEach((img, i) => {
+                // usar el atributo data-src para reproducir rutas locales
+                img.src = img.getAttribute('data-src');
+                img.style.position = 'absolute';
+                img.style.left = 0;
+                img.style.top = 0;
+                img.style.opacity = 0;
+                img.style.transition = 'opacity 700ms ease, transform 700ms ease';
+                img.style.transform = 'scale(1.03)';
+                img.style.objectFit = 'cover';
+                if (i === 0) { img.style.opacity = 1; img.style.transform = 'scale(1)'; }
+                // crear dots
+                const d = document.createElement('div');
+                d.className = 'dot' + (i === 0 ? ' active' : '');
+                d.dataset.i = i;
+                d.addEventListener('click', () => showSlide(parseInt(d.dataset.i)));
+                dots.appendChild(d);
+            });
+
+            function showSlide(i) {
+                imgs[index].style.opacity = 0;
+                imgs[index].style.transform = 'scale(1.03)';
+                dots.children[index].classList.remove('active');
+                index = (i + imgs.length) % imgs.length;
+                imgs[index].style.opacity = 1;
+                imgs[index].style.transform = 'scale(1)';
+                dots.children[index].classList.add('active');
+            }
+
+            function start() {
+                interval = setInterval(() => showSlide(index + 1), 4500);
+            }
+            function stop() {
+                clearInterval(interval);
+            }
+
+            carousel.addEventListener('mouseenter', stop);
+            carousel.addEventListener('mouseleave', start);
+
+            start();
+        })();
+
+        // ---- Scroll reveal: IntersectionObserver ----
+        (function () {
+            const items = document.querySelectorAll('.reveal');
+            const obs = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('visible');
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12 });
+            items.forEach(i => obs.observe(i));
+        })();
+
+        // ---- Smooth scroll for anchor links ----
+        (function () {
+            document.querySelectorAll('a[href^="#"]').forEach(a => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const t = document.querySelector(a.getAttribute('href'));
+                    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                });
+            });
+        })();
+
+        // ---- Botones de ejemplo ----
+        function openBuy() {
+            alert('Simulación: ir a la página de compra / configurador');
+        }
+        function openChat() {
+            alert('Simulación: abrir chat con un especialista');
+        }
+    </script>
+</body>
+
+</html>
