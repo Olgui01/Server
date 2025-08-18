@@ -311,6 +311,12 @@ app.post('/register', upload, (req, res) => {
   for (let index = 0; index < files.length; index++) {
     const i = imgs.indexOf(files[index].originalname);
     imgs[i] = files[index].filename;
+     req.files.map((file) => {
+    console.log('Intentando procesar:', `./public/Product/${file[index].filename}`);
+    fs.access(`./public/Product/${file[index].filename}`, fs.constants.F_OK, (err) => {
+      console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
+    });
+  });
     sharp(`./public/product/${files[index].filename}`)                     // Imagen original
         .resize(700, 500)                    // Redimensionar a 800x600
         .jpeg({ quality: 70 })
@@ -340,13 +346,6 @@ app.post('/edit', upload, (req, res) => {
   // }
   
   const file = filterimgs(req.files, JSON.parse(imgs));
-  imgsEdit(parseInt(id), file)
-    .then((file) => {
-      edit({ id: id, file, title, price, category, numbers, descripcion })
-        .then(() => res.sendStatus(200))
-        .catch(() => res.sendStatus(400))
-    })
-    .catch();
 
 
 
