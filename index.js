@@ -307,21 +307,16 @@ app.post('/register', upload, (req, res) => {
   insertItem(item, file).then((id) => { res.json(id) }).catch();
 });
 
- function filterimgs(files, imgs) {
+function filterimgs(files, imgs) {
   for (let index = 0; index < files.length; index++) {
     const i = imgs.indexOf(files[index].originalname);
     imgs[i] = files[index].filename;
-     req.files.map((file) => {
-    console.log('Intentando procesar:', `./public/Product/${file[index].filename}`);
-    fs.access(`./public/Product/${file[index].filename}`, fs.constants.F_OK, (err) => {
-      console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
-    });
-  });
+
     sharp(`./public/product/${files[index].filename}`)                     // Imagen original
-        .resize(700, 500)                    // Redimensionar a 800x600
-        .jpeg({ quality: 70 })
-        .toFile(`./public/ProductOptimize/${files[index].filename}`)               // Guardar como output.jpg
-        .catch(err => console.error('Error:', err));
+      .resize(700, 500)                    // Redimensionar a 800x600
+      .jpeg({ quality: 70 })
+      .toFile(`./public/ProductOptimize/${files[index].filename}`)               // Guardar como output.jpg
+      .catch(err => console.error('Error:', err));
   }
   return imgs;
 }
@@ -344,7 +339,12 @@ app.post('/edit', upload, (req, res) => {
   //       .catch(err => console.error('Error:', err));
   //   });
   // }
-  
+  req.files.map((file) => {
+    console.log('Intentando procesar:', `./public/Product/${file.filename}`);
+    fs.access(`./public/Product/${file.filename}`, fs.constants.F_OK, (err) => {
+      console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
+    });
+  });
   const file = filterimgs(req.files, JSON.parse(imgs));
 
 
