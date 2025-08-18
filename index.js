@@ -307,20 +307,56 @@ app.post('/register', upload, (req, res) => {
   insertItem(item, file).then((id) => { res.json(id) }).catch();
 });
 
+ function filterimgs(files, imgs) {
+  for (let index = 0; index < files.length; index++) {
+    const i = imgs.indexOf(files[index].originalname);
+    imgs[i] = files[index].filename;
+    sharp(`./public/product/${files[index].filename}`)                     // Imagen original
+        .resize(700, 500)                    // Redimensionar a 800x600
+        .jpeg({ quality: 70 })
+        .toFile(`./public/ProductOptimize/${files[index].filename}`)               // Guardar como output.jpg
+        .catch(err => console.error('Error:', err));
+  }
+  return imgs;
+}
 
 
 app.post('/edit', upload, (req, res) => {
-  // const { id, imgs, title, price, category, numbers, descripcion } = req.body;
-  console.log('orryde');
-  console.log(req.files);
-  if (req.files[0] != undefined) {
-    req.files.map((file) => {
-      console.log('Intentando procesar:', `./public/Product/${file.filename}`);
-      fs.access(`./public/Product/${file.filename}`, fs.constants.F_OK, (err) => {
-        console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
-      });
-    });
-  }
+  const { id, imgs, title, price, category, numbers, descripcion } = req.body;
+  // console.log(imgs);
+  // var img = JSON.parse(imgs);
+  // if (req.files[0] != undefined) {
+  //   var files = req.files;
+  //   files.map((file) => {
+  //     const i = img.indexOf(file.originalname);
+  //     img[i] = file.filename;
+  //     sharp(`./public/product/${file.filename}`)                     // Imagen original
+  //       .resize(700, 500)                    // Redimensionar a 800x600
+  //       .jpeg({ quality: 70 })
+  //       .toFile(`./public/ProductOptimize/${fileName}`)
+  //       .toFile(`./public/ProductOptimize/${file.filename}`)               // Guardar como output.jpg
+  //       .catch(err => console.error('Error:', err));
+  //   });
+  // }
+  
+  const file = filterimgs(req.files, JSON.parse(imgs));
+  imgsEdit(parseInt(id), file)
+    .then((file) => {
+      edit({ id: id, file, title, price, category, numbers, descripcion })
+        .then(() => res.sendStatus(200))
+        .catch(() => res.sendStatus(400))
+    })
+    .catch();
+
+
+
+  // req.files.map((file) => {
+  //   console.log('Intentando procesar:', `./public/Product/${file.filename}`);
+  //   fs.access(`./public/Product/${file.filename}`, fs.constants.F_OK, (err) => {
+  //     console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
+  //   });
+  // });
+
   res.sendStatus(200);
 });
 
