@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  server:
+    build: .
+    container_name: server
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - public:/home/app/public
+volumes:
+  public:
+

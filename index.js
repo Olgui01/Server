@@ -46,25 +46,6 @@ conectarDB();
 const client = new MongoClient(process.env.MONGO_URI);
 
 
-
-
-// //modelo
-// const Register = {
-
-//   id: { type: Number, required: true }, // ID como número entero
-//   img: { type: String, default: null },
-//   name: { type: String, required: true },
-//   number: { type: String, required: true },
-//   descripcion: { type: String },
-//   createdAt: { type: Date, default: Date.now }
-// }
-
-// archivo public
-
-
-
-
-
 // Conexión a MongoDB Atlas
 function getCollection() {
   return client.db('Server').collection('Register');
@@ -147,8 +128,12 @@ function drop(id) {
       const { file } = await getCollection().findOne({ id }, { projection: { _id: 0, file: 1 } });
 
       for (let index = 0; index < file.length; index++) {
-        fs.unlinkSync('./public/Product/' + file[index]);
-        fs.unlinkSync('./public/ProductOptimize/' + file[index]);
+        if (fs.existsSync('./public/Product/' + file[index])) {
+          fs.unlinkSync('./public/Product/' + file[index]);
+        }
+        if (fs.existsSync('./public/ProductOptimize/' + file[index])) {
+          fs.unlinkSync('./public/ProductOptimize/' + file[index]);
+        }
       }
       const result = await client.db('Server').collection('Register').deleteOne({ id: parseInt(id) });
       if (result.deletedCount == 0) {
@@ -164,28 +149,35 @@ function drop(id) {
   });
 }
 
+async function filterimgs(files, imgs, id) {
+  for (let index = 0; index < files.length; index++) {
+    const i = imgs.indexOf(files[index].originalname);
+    imgs[i] = files[index].filename;
+    sharp(`./public/Product/${files[index].filename}`)                     // Imagen original
+      .resize(700, 500)                    // Redimensionar a 800x600
+      .jpeg({ quality: 70 })
+      .toFile(`./public/ProductOptimize/${files[index].filename}`)               // Guardar como output.jpg
+      .catch(err => console.error('Error:', err));
+  }
+  const set = new Set(imgs);
 
-function imgsEdit(id, imgs) {
-  console.log(imgs);
-  return new Promise(async (resolve, reject) => {
-    const setA = new Set(imgs);
-    try {
-      const { file } = await getCollection().findOne({ id }, { projection: { _id: 0, file: 1 } });
-      const imgsDelete = file.filter((item) => !setA.has(item));
-      if (imgsDelete[0] != undefined) {
-        imgsDelete.map(item => {
-          fs.unlinkSync('./public/Product/' + item);
-          fs.unlinkSync('./public/ProductOptimize/' + item);
-        });
+  const { file } = await getCollection().findOne({ id }, { projection: { _id: 0, file: 1 } });
+  for (let index = 0; index < file.length; index++) {
+    if (!set.has(file[index])) {
+      const product = `./public/Product/${file[index].filename}`;
+      const productoptimize = `/public/ProductOptimize/${file[index].filename}`;
+      if (fs.existsSync(product)) {
+        fs.unlinkSync(product);
       }
-
-      resolve(state);
-    } catch (e) {
-      resolve(imgs);
+      if (fs.existsSync(productoptimize)) {
+        fs.unlinkSync(productoptimize);
+      }
     }
-  })
+  }
+  return imgs;
 
 }
+
 
 function edit({ id, file, title, price, category, numbers, descripcion }) {
   return new Promise(async (resolve, reject) => {
@@ -203,11 +195,6 @@ function edit({ id, file, title, price, category, numbers, descripcion }) {
           }
         }
       );
-
-      // if (result.modifiedCount === 0) {
-      //   console.log("⚠️ No se encontró el documento o no se modificó.");
-      //   reject("No se modificó");
-      // } else {
 
       resolve();
       // }
@@ -236,6 +223,7 @@ app.get('/show/:category', (req, res) => {
 app.get('/', (req, res) => {
   showItem().then((item) => { item = item.map((item) => { item.file = item.file[0]; return item; }); res.json(item); }).catch((e) => { console.log(e) });
 });
+
 app.get("/ShowItem/:id", async (req, res) => {
   try {
     var { id } = req.params;
@@ -251,8 +239,11 @@ app.get("/ShowItem/:id", async (req, res) => {
         const ruta = filePathBase + name;
         return fs.existsSync(ruta);
       });
+
+      document.filehtml = (fs.existsSync('./public/Files/' + id + '/index.html')) ? true : false;
       document.file = filesExistentes;
     }
+    console.log(document);
     res.json(document);
   } catch (error) {
     res.sendStatus(400);
@@ -289,11 +280,6 @@ app.get("/search/:title/:category", async (req, res) => {
   res.json((document[0] == undefined) ? [null] : document);
 });
 
-// app.post("/searchC", (req, res) => {
-//   const {} = req.body;
-// });
-
-
 
 app.post('/register', upload, (req, res) => {
   const item = req.body;
@@ -307,57 +293,19 @@ app.post('/register', upload, (req, res) => {
   insertItem(item, file).then((id) => { res.json(id) }).catch();
 });
 
-function filterimgs(files, imgs) {
-  for (let index = 0; index < files.length; index++) {
-    const i = imgs.indexOf(files[index].originalname);
-    imgs[i] = files[index].filename;
-
-    sharp(`./public/product/${files[index].filename}`)                     // Imagen original
-      .resize(700, 500)                    // Redimensionar a 800x600
-      .jpeg({ quality: 70 })
-      .toFile(`./public/ProductOptimize/${files[index].filename}`)               // Guardar como output.jpg
-      .catch(err => console.error('Error:', err));
-  }
-  return imgs;
-}
 
 
-app.post('/edit', upload, (req, res) => {
-  const { id, imgs, title, price, category, numbers, descripcion } = req.body;
-  // console.log(imgs);
-  // var img = JSON.parse(imgs);
-  // if (req.files[0] != undefined) {
-  //   var files = req.files;
-  //   files.map((file) => {
-  //     const i = img.indexOf(file.originalname);
-  //     img[i] = file.filename;
-  //     sharp(`./public/product/${file.filename}`)                     // Imagen original
-  //       .resize(700, 500)                    // Redimensionar a 800x600
-  //       .jpeg({ quality: 70 })
-  //       .toFile(`./public/ProductOptimize/${fileName}`)
-  //       .toFile(`./public/ProductOptimize/${file.filename}`)               // Guardar como output.jpg
-  //       .catch(err => console.error('Error:', err));
-  //   });
-  // }
-  req.files.map((file) => {
-    console.log('Intentando procesar:', `./public/Product/${file.filename}`);
-    fs.access(`./public/Product/${file.filename}`, fs.constants.F_OK, (err) => {
-      console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
-    });
-  });
-  const file = filterimgs(req.files, JSON.parse(imgs));
+app.post('/edit', upload, async (req, res) => {
+  const { imgs, title, price, category, numbers, descripcion } = req.body;
+  const id = parseInt(req.body.id);
 
+  const file = await filterimgs(req.files, JSON.parse(imgs), id);
 
-
-  // req.files.map((file) => {
-  //   console.log('Intentando procesar:', `./public/Product/${file.filename}`);
-  //   fs.access(`./public/Product/${file.filename}`, fs.constants.F_OK, (err) => {
-  //     console.log(err ? 'Archivo aún no accesible' : 'Archivo listo');
-  //   });
-  // });
-
-  res.sendStatus(200);
+  edit({ id, file, title, price, category, numbers, descripcion })
+    .then(() => res.sendStatus(200))
+    .catch(() => res.sendStatus(400));
 });
+
 
 function deleteFiles(showFiles, setFile, path) {
   return new Promise((resolve, reject) => {
@@ -380,6 +328,7 @@ function deleteFiles(showFiles, setFile, path) {
 
 app.post('/upFile', uploadFile, (req, res,) => {
   const { id, files } = req.body;
+  console.log(id, files);
   var dir = fs.readdirSync('./public/Files/' + id);
   deleteFiles(dir, JSON.parse(files), `./public/Files/${id}/`)
     .then(() => res.sendStatus(200))
@@ -397,12 +346,7 @@ app.get('/upFile/:id', (req, res) => {
     res.sendStatus(400);
   }
 });
-// app.post('/edit', (req, res) => {
-//   const { id, name, price, numbers, descripcion } = req.body;
-//   const request = req.body;
-//   update(request).then(() => res.sendStatus( 3300)).catch(() => res.sendStatus(400))
-//   console.log(`\nid:${id}\nname:${name}\nprice:${price}\nnubers:${numbers}\ndescripcion:${descripcion}\n`);
-// });
+
 
 app.use('/Render', express.static("./public/Files"));
 app.use('/Product', express.static("./public/Product"));
